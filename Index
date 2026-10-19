@@ -1,1 +1,155 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#111110">
+<title>AUREN — Wealth, redefined.</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%23d7c18a%22/><text x=%2250%22 y=%2272%22 font-size=%2262%22 font-family=%22Georgia%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22%23111110%22>A</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#111110;--panel:#1a1a18;--line:#30302b;--tx:#f4f1e8;--mu:#a5a398;--gold:#d7c18a;--pos:#91c7a0;--neg:#e18d82;--serif:Georgia,'Times New Roman',serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}
+button,input{font:inherit}button{cursor:pointer}
+header{display:flex;align-items:center;gap:12px;padding:18px clamp(16px,4vw,48px);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;flex:1}
+.mark{width:40px;height:40px;border-radius:12px;background:var(--gold);color:#111110;display:grid;place-items:center;font:700 24px var(--serif)}
+.brand strong{font:600 21px var(--serif);letter-spacing:3px;display:block}
+.brand small{display:block;color:var(--gold);font-size:10px;letter-spacing:1.8px;text-transform:uppercase}
+#meta{color:var(--mu);font-size:12px}
+.btn,nav button{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:9px 14px}
+.btn:hover,nav button:hover,nav button.on{border-color:var(--gold);color:var(--gold)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+main{max-width:1100px;margin:0 auto;padding:28px clamp(16px,4vw,48px) 60px}
+nav{display:flex;gap:8px;margin-bottom:26px;overflow-x:auto}nav button{white-space:nowrap}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:26px}
+.crit{display:grid;grid-template-columns:minmax(140px,1.2fr) 2fr auto;gap:4px 14px;align-items:center;margin:14px 0}
+.crit .t{height:6px;background:#2a2923;border-radius:3px}.crit .t i{display:block;height:100%;background:var(--gold);border-radius:3px}
+.crit small{grid-column:1/-1;color:var(--mu);font-size:12px}
+.frm{display:flex;gap:10px;flex-wrap:wrap}.frm input,.frm label{flex:1 1 150px}
+.frm label{display:grid;gap:4px;color:var(--mu)}.frm.col label{flex:1 1 100%}
+.x{padding:4px 10px;font-size:12px}.hero .big{font:500 clamp(38px,7vw,64px)/1.1 var(--serif);letter-spacing:-.5px;margin:6px 0 8px}
+.hero .row{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;font-size:15px}
+.mu{color:var(--mu)}.pos{color:var(--pos)}.neg{color:var(--neg)}.warn{color:var(--gold)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+.card{background:linear-gradient(145deg,#1d1d1a,#181816);border:1px solid var(--line);border-radius:15px;padding:20px;min-width:0;margin-bottom:16px}
+.stats .card{margin:0}.v{font:500 26px var(--serif);margin:8px 0 2px}
+h2{font:500 19px var(--serif);margin:0 0 14px}
+.bar{position:relative;height:10px;background:#2a2923;border-radius:5px;margin:16px 0 28px}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:5px}
+.bar b{position:absolute;top:16px;font-size:11px;font-weight:400;color:var(--mu);transform:translateX(-50%)}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.ch{position:relative;height:270px}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}
+th{color:var(--mu);font-weight:400;font-size:12px;text-align:right;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}tr.tot td{font-weight:600;color:var(--gold);border-bottom:0}
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#login[hidden],section[hidden]{display:none}
+#login form{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:26px;width:340px;display:grid;gap:12px}
+input{font-size:16px;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--tx)}
+.btn.gold{background:var(--gold);color:#151511;border-color:var(--gold);font-weight:600}
+#err{color:var(--neg);min-height:18px;font-size:13px}
+</style></head><body>
+<header><div class="brand"><div class="mark">A</div><div><strong>AUREN</strong><small>Wealth, redefined.</small></div></div><span id="meta"></span><button class="btn" id="refresh">Actualiser</button><button class="btn" id="logout">Verrouiller</button></header>
+<main id="app"></main>
+<div id="login" hidden><form id="lf"><div class="brand"><div class="mark">A</div><strong>AUREN</strong></div><input id="tk" type="password" placeholder="Code d'accès" autocomplete="current-password"><button class="btn gold">Déverrouiller</button><div id="err"></div></form></div>
+<script>
+// À MODIFIER : URL de déploiement Apps Script (se termine par /exec)
+const API_URL='COLLE_ICI_L_URL_APPS_SCRIPT';
+const GOAL=100000,KEY='auren_token',PAL=['#d7c18a','#91c7a0','#b89b5e','#8a8574','#e18d82','#6f8f7a','#f4f1e8','#c9a86a','#a5a398','#5d5a4e'];
+const $=s=>document.querySelector(s);
+const cl=v=>String(v).replace(/[\s€%\u00a0]/g,'').replace(',','.');
+const isN=v=>typeof v==='number'||(typeof v==='string'&&v.trim()!==''&&!isNaN(parseFloat(cl(v))));
+const n=v=>typeof v==='number'?v:(parseFloat(cl(v))||0);
+const f=(v,d=2)=>n(v).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const eur=(v,d=2)=>isN(v)?f(v,d)+' €':'—';
+const p=v=>typeof v==='number'?v*100:(isN(v)?n(v):NaN);
+const pc=v=>isNaN(p(v))?'—':f(p(v))+' %';
+const cls=v=>{const x=p(v);return isNaN(x)?'':x>=0?'pos':'neg'};
+const D=v=>{if(!v)return null;let m=String(v).match(/^(\d{4})-(\d\d)-(\d\d)/);if(m)return new Date(+m[1],m[2]-1,+m[3]);m=String(v).match(/^(\d\d)\/(\d\d)\/(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]):null};
+const fmt=(t,v)=>t==='e'?eur(v):t==='p'?pc(v):t==='q'?(isN(v)?f(v,4):'—'):(v==null?'':v);
+const tbl=(cols,rows)=>`<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="${/^TOTAL/.test(r[cols[0][1]]||r['Nom']||'')?'tot':''}">${cols.map(c=>`<td class="${c[2]==='p'?cls(r[c[1]]):''}">${fmt(c[2],r[c[1]])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+let charts=[],cur='ov';
+Chart.defaults.font.family='Inter,system-ui,sans-serif';Chart.defaults.color='#a5a398';
+const donut=(id,e)=>charts.push(new Chart($(id),{type:'doughnut',data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:PAL,borderColor:'#1a1a18',borderWidth:2}]},options:{maintainAspectRatio:false,cutout:'64%',plugins:{legend:{position:'bottom',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label} : ${eur(c.parsed,0)}`}}}}}));
+const agg=(rows,k)=>{const m={};rows.forEach(r=>{const key=String(r[k]||'Autre').trim();m[key]=(m[key]||0)+n(r['Val. Totale'])});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
 
+function render(d){
+  charts.forEach(c=>c.destroy());charts=[];
+  const k=d.cockpit||{},ind={};(d.indicateurs||[]).forEach(r=>ind[r['Indicateurs']]=r['Valeur']);
+  const iv=s=>{const x=Object.keys(ind).find(y=>y.startsWith(s));return x?ind[x]:null};
+  const pat=(d.patrimoine||[]).filter(r=>r['Actif']&&r['Actif']!=='TOTAL'&&n(r['Val. Totale'])>0);
+  const cto=(d.cto||[]).filter(r=>r['Ticker']);
+  const ctoAll=(d.cto||[]).filter(r=>r['Ticker']||r['Nom']==='TOTAL');
+  const cry=(d.crypto||[]).filter(r=>r['TICKER']||r['Nom']==='TOTAL');
+  const hist=(d.historique||[]).map(r=>({d:D(r['Date']),inv:n(r['Investi total']),val:n(r['Valeur totale'])})).filter(r=>r.d).sort((a,b)=>a.d-b.d);
+  const S={};(d.reglages||[]).forEach(r=>S[r['Clé']]=r['Valeur']);const G=n(S.objectif)||GOAL;
+  const tot=n(k['Patrimoine total']),ratio=Math.min(tot/G,1);
+  const conc=iv('Concentration'),pcry=iv('Part Cryptos'),sl=isN(S.seuil_airbus)?n(S.seuil_airbus):p(iv('Seuil')),over=p(conc)>sl;
+  const eff=e=>{const t=e.reduce((a,x)=>a+x[1],0)||1;return 1/e.reduce((a,x)=>a+(x[1]/t)**2,0)};
+  const c01=x=>Math.max(0,Math.min(1,x)),cc=p(conc),cp=p(pcry);
+  const nEff=(eff(agg(cto,'Secteur'))+eff(agg(cto,'Zone Géo')))/2;
+  const crit=[['Poids d\'Airbus',25*(cc<=sl?1:c01(1-(cc-sl)/sl)),`${f(cc,1)} % pour un seuil de ${f(sl,0)} %`],['Part des cryptos',25*(cp<=10?1:c01(1-(cp-10)/30)),`${f(cp,1)} % (idéal : 10 % ou moins)`],['Variété des secteurs et zones',25*c01((nEff-1)/5),`${f(nEff,1)} secteurs ou zones équivalents (idéal : 6)`],['Nombre de lignes',25*c01(cto.length/20),`${cto.length} lignes (idéal : 20)`]];
+  const score=Math.round(crit.reduce((a,c)=>a+(c[1]||0),0));
+  const ring=`<svg viewBox="0 0 120 120" width="136" height="136" role="img" aria-label="Score ${score} sur 100"><circle cx="60" cy="60" r="54" fill="none" stroke="#2a2923" stroke-width="9"/><circle cx="60" cy="60" r="54" fill="none" stroke="#d7c18a" stroke-width="9" stroke-linecap="round" stroke-dasharray="${339.3*score/100} 339.3" transform="rotate(-90 60 60)"/><text x="60" y="66" text-anchor="middle" font-family="Georgia,serif" font-size="36" fill="#f4f1e8">${score}</text><text x="60" y="86" text-anchor="middle" font-size="11" fill="#a5a398">sur 100</text></svg>`;
+  const scoreCard=`<div class="card"><h2>Score de diversification</h2>${crit.map(c=>`<div class="crit"><span>${c[0]}</span><div class="t"><i style="width:${(c[1]||0)*4}%"></i></div><span>${Math.round(c[1]||0)}/25</span><small>${c[2]}</small></div>`).join('')}</div>`;
+  const now=new Date(),ym=x=>x.getFullYear()*12+x.getMonth();
+  const dep=(d.depenses||[]).map(r=>({id:r['ID'],d:D(r['Date']),c:r['Catégorie']||'Divers',l:r['Libellé'],m:n(r['Montant'])})).filter(r=>r.id&&r.d).sort((a,b)=>b.d-a.d);
+  const dm=dep.filter(r=>ym(r.d)===ym(now)),mt=dm.reduce((a,r)=>a+r.m,0),bud=n(S.budget_mensuel),byCat={};
+  dm.forEach(r=>byCat[r.c]=(byCat[r.c]||0)+r.m);
+  const cats=[...new Set([...dep.map(r=>r.c),'Logement','Courses','Transport','Restaurants','Loisirs','Santé','Abonnements','Divers'])];
+  const depHTML=`<section id="s-dep" hidden><div class="stats"><div class="card"><div class="mu">Dépensé ce mois-ci</div><div class="v ${bud&&mt>bud?'neg':''}">${eur(mt)}</div>${bud?`<div class="mu">Budget ${eur(bud,0)} : reste ${eur(bud-mt,0)}</div>`:'<div class="mu">Définis un budget dans Réglages</div>'}</div></div>
+<div class="card"><h2>Ajouter une dépense</h2><div class="frm"><input id="dd" type="date" value="${now.toLocaleDateString('sv-SE')}"><input id="dc" list="cats" placeholder="Catégorie"><datalist id="cats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist><input id="dl" placeholder="Libellé"><input id="dm" type="number" step="0.01" placeholder="Montant en €"><button class="btn gold" id="dadd">Ajouter</button></div><p class="mu" id="dmsg"></p></div>
+<div class="g3"><div class="card"><h2>Ce mois-ci, par catégorie</h2><div class="ch"><canvas id="c6"></canvas></div></div><div class="card"><h2>Les 6 derniers mois</h2><div class="ch"><canvas id="c7"></canvas></div></div></div>
+<div class="card"><h2>Dernières dépenses</h2><div class="tw"><table><thead><tr><th>Date</th><th>Catégorie</th><th>Libellé</th><th>Montant</th><th></th></tr></thead><tbody>${dep.slice(0,40).map(r=>`<tr><td>${r.d.toLocaleDateString('fr-FR')}</td><td>${esc(r.c)}</td><td>${esc(r.l)}</td><td>${eur(r.m)}</td><td><button class="btn x" data-id="${esc(r.id)}">Supprimer</button></td></tr>`).join('')||'<tr><td colspan="5" class="mu">Aucune dépense pour l\'instant.</td></tr>'}</tbody></table></div></div></section>`;
+  const regHTML=`<section id="s-reg" hidden><div class="card"><h2>Réglages</h2><div class="frm col"><label>Objectif de patrimoine (€)<input id="r1" type="number" value="${G}"></label><label>Seuil d'alerte pour Airbus (%)<input id="r2" type="number" step="0.5" value="${isNaN(sl)?25:sl}"></label><label>Budget mensuel de dépenses (€)<input id="r3" type="number" value="${bud||''}"></label><button class="btn gold" id="rsave">Enregistrer</button><p class="mu" id="rmsg"></p></div></div><p class="mu">Ces valeurs sont enregistrées dans ton Google Sheet (onglet AUREN Réglages).</p></section>`;
+  const tabs=[['ov','Vue d\'ensemble'],['cto','Investissements'],['air','Airbus'],['cry','Crypto'],['his','Historique'],['dep','Dépenses'],['reg','Réglages']];
+  $('#meta').textContent='Mis à jour '+new Date(d.generatedAt).toLocaleString('fr-FR');
+  $('#app').innerHTML=`<nav>${tabs.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join('')}</nav>
+<section id="s-ov"><div class="hero"><div><div class="mu">Votre patrimoine</div><div class="big">${eur(k['Patrimoine total'])}</div>
+<div class="row"><span class="${cls(k['Performance'])}">${pc(k['Performance'])}</span><span class="${cls(k['Plus-value'])}">${eur(k['Plus-value'],0)} de plus-value</span></div></div>${ring}</div>${scoreCard}
+<div class="card"><h2>Objectif ${eur(G,0)} : ${f(ratio*100,1)} % atteint</h2><div class="bar"><i style="width:${ratio*100}%"></i>${[25,50,75].map(m=>`<b style="left:${m}%">${f(G*m/100000,G<4e5?0:1)} k€</b>`).join('')}<b style="left:100%">${f(G/1000,0)} k€</b></div><div class="mu">Reste à investir : ${eur(Math.max(G-tot,0),0)}</div></div>
+<div class="stats"><div class="card"><div class="mu">Capital investi</div><div class="v">${eur(k['Capital investi'],0)}</div></div>
+<div class="card"><div class="mu">TRI du CTO, annualisé</div><div class="v ${cls(k['TRI CTO annualisé'])}">${pc(k['TRI CTO annualisé'])}</div></div>
+<div class="card"><div class="mu">Dividendes de l'année</div><div class="v">${eur(k['Dividendes (année en cours)'])}</div></div>
+<div class="card"><div class="mu">Poids d'Airbus</div><div class="v ${over?'warn':''}">${pc(conc)}</div><div class="mu">Seuil ${f(sl)} %, cryptos ${pc(pcry)}</div></div></div>
+<div class="g3"><div class="card"><h2>Par enveloppe</h2><div class="ch"><canvas id="c1"></canvas></div></div><div class="card"><h2>Par secteur</h2><div class="ch"><canvas id="c2"></canvas></div></div><div class="card"><h2>Par zone</h2><div class="ch"><canvas id="c3"></canvas></div></div></div>
+<div class="card"><h2>Enveloppes</h2>${tbl([['Actif','Actif'],['Investi','Investissement','e'],['Valeur','Val. Totale','e'],['Plus-value','Plus-Value (€)','e'],['Perf.','Performance (%)','p'],['Poids','Répartition','p']],d.patrimoine||[])}</div>
+<div class="card"><h2>Suivi annuel</h2>${tbl([['Année','Année'],['Investi','Sommes investies','e'],['Plus-value','Plus-value','e'],['Patrimoine','Patrimoine actuel','e'],['Perf.','Performance (%)','p']],(d.annuel||[]).filter(r=>n(r['Patrimoine actuel'])>0))}</div></section>
+<section id="s-cto" hidden><div class="card"><h2>Performance par ligne</h2><div class="ch" style="height:380px"><canvas id="c5"></canvas></div></div><div class="card"><h2>Investissements (CTO)</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['1 jour','1JOUR','p'],['1 mois','1MOIS','p'],['YTD','YTD','p'],['Perf.','Perf %','p']],ctoAll)}</div></section>
+<section id="s-air" hidden><div class="card"><h2>Airbus : PEG et PERCOL</h2>${tbl([['Ligne','Synthèse'],['Qté','Quantité','q'],['Investi','Investi','e'],['PRU réel','PRU Réel','e'],['Cours','Cours Actuel','e'],['Valeur','Val.Totale','e'],['Plus-value','Plus-Value','e'],['Perf.','Perf %','p']],d.airbus||[])}</div></section>
+<section id="s-cry" hidden><div class="card"><h2>Cryptos</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix (EUR)','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['Perf.','Perf %','p'],['Alloc.','Allocation en %','p']],cry)}</div></section>
+${depHTML}${regHTML}<section id="s-his" hidden><div class="card"><h2>Évolution du patrimoine</h2><div class="ch"><canvas id="c4"></canvas></div>${hist.length<3?'<p class="mu">La courbe se remplira à chaque nouveau snapshot de l\'onglet Historique.</p>':''}</div>
+<div class="card">${tbl([['Date','Date'],['Investi','Investi total','e'],['Valeur','Valeur totale','e'],['Plus-value','Plus-value','e'],['Perf.','Perf %','p']],(d.historique||[]).slice(-15).reverse().map(r=>({...r,Date:D(r['Date'])?D(r['Date']).toLocaleDateString('fr-FR'):r['Date']})))}</div></section>`;
+  donut('#c1',pat.map(r=>[r['Actif'],n(r['Val. Totale'])]));donut('#c2',agg(cto,'Secteur'));donut('#c3',agg(cto,'Zone Géo'));donut('#c6',Object.entries(byCat));
+  const pl=cto.filter(r=>isN(r['Perf %'])).sort((a,b)=>p(b['Perf %'])-p(a['Perf %']));
+  charts.push(new Chart($('#c5'),{type:'bar',data:{labels:pl.map(r=>r['Nom']),datasets:[{data:pl.map(r=>p(r['Perf %'])),backgroundColor:pl.map(r=>p(r['Perf %'])>=0?'#91c7a0':'#e18d82'),borderRadius:4}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+f(c.parsed.x)+' %'}}},scales:{x:{grid:{color:'#30302b'},ticks:{callback:v=>v+' %'}},y:{grid:{display:false}}}}}));
+  const mo=[...Array(6)].map((_,i)=>{const x=new Date(now.getFullYear(),now.getMonth()-5+i,1);return[x.toLocaleDateString('fr-FR',{month:'short'}),dep.filter(r=>ym(r.d)===ym(x)).reduce((a,r)=>a+r.m,0)]});
+  charts.push(new Chart($('#c7'),{type:'bar',data:{labels:mo.map(x=>x[0]),datasets:[{data:mo.map(x=>x[1]),backgroundColor:'#d7c18a',borderRadius:6}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#30302b'},ticks:{callback:v=>eur(v,0)}}}}}));
+  charts.push(new Chart($('#c4'),{type:'line',data:{labels:hist.map(r=>r.d.toLocaleDateString('fr-FR')),datasets:[{label:'Valeur totale',data:hist.map(r=>r.val),borderColor:'#d7c18a',backgroundColor:'#d7c18a',tension:.25,pointRadius:4},{label:'Investi',data:hist.map(r=>r.inv),borderColor:'#8a8574',backgroundColor:'#8a8574',tension:.25,pointRadius:4}]},options:{maintainAspectRatio:false,scales:{x:{grid:{color:'#30302b'}},y:{grid:{color:'#30302b'},ticks:{callback:v=>eur(v,0)}}}}}));
+  const show=t=>{cur=t;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!=='s-'+t)};
+  document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.t));show(cur);bind();
+}
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(o){const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...o,token:localStorage.getItem(KEY)})});const j=await r.json();if(j.error)throw new Error(j.error);return j}
+function bind(){
+  const say=(id,t)=>{const e=$(id);if(e)e.textContent=t};
+  $('#dadd').onclick=async()=>{const m=parseFloat($('#dm').value),dt=$('#dd').value;if(!(m>0)||!dt)return say('#dmsg','Renseigne une date et un montant.');
+    say('#dmsg','Enregistrement…');
+    try{await api({action:'addExpense',date:dt,cat:$('#dc').value.trim()||'Divers',label:$('#dl').value.trim(),amount:m});await load()}catch(e){say('#dmsg','Échec : redéploie le script Apps Script (voir README).')}};
+  document.querySelectorAll('.x').forEach(b=>b.onclick=async()=>{if(!confirm('Supprimer cette dépense ?'))return;try{await api({action:'delExpense',id:b.dataset.id});await load()}catch(e){alert('Échec de la suppression.')}});
+  $('#rsave').onclick=async()=>{say('#rmsg','Enregistrement…');try{await api({action:'settings',values:{objectif:$('#r1').value,seuil_airbus:$('#r2').value,budget_mensuel:$('#r3').value}});await load()}catch(e){say('#rmsg','Échec de l\'enregistrement.')}};
+}
+function login(msg){$('#login').hidden=false;$('#err').textContent=msg||''}
+async function load(){
+  if(API_URL.startsWith('COLLE'))return $('#meta').textContent='Configure API_URL dans index.html';
+  const t=localStorage.getItem(KEY);if(!t)return login();
+  $('#meta').textContent='Chargement…';
+  try{const d=await(await fetch(API_URL+'?token='+encodeURIComponent(t))).json();
+    if(d.error){localStorage.removeItem(KEY);return login('Code incorrect.')}
+    $('#login').hidden=true;render(d)}
+  catch(e){$('#meta').textContent='Connexion à Google Sheets impossible'}
+}
+$('#lf').onsubmit=e=>{e.preventDefault();localStorage.setItem(KEY,$('#tk').value.trim());$('#tk').value='';load()};
+$('#refresh').onclick=load;$('#logout').onclick=()=>{localStorage.removeItem(KEY);$('#app').innerHTML='';login()};
+load();setInterval(load,300000);
+</script></body></html>
