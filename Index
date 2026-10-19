@@ -54,7 +54,7 @@ input{font-size:16px;padding:11px;border-radius:9px;border:1px solid var(--line)
 <div id="login" hidden><form id="lf"><div class="brand"><div class="mark">A</div><strong>AUREN</strong></div><input id="tk" type="password" placeholder="Code d'accès" autocomplete="current-password"><button class="btn gold">Déverrouiller</button><div id="err"></div></form></div>
 <script>
 // À MODIFIER : URL de déploiement Apps Script (se termine par /exec)
-const API_URL='COLLE_ICI_L_URL_APPS_SCRIPT';
+const API_URL='https://script.google.com/macros/s/AKfycbxFBjrEl83cix6XmdFWPLNhtUJSyiqRxnU6d4x2kx6PvTPfpyIiFhZ_bvy6Ozn7uKnkbA/exec';
 const GOAL=100000,KEY='auren_token',PAL=['#d7c18a','#91c7a0','#b89b5e','#8a8574','#e18d82','#6f8f7a','#f4f1e8','#c9a86a','#a5a398','#5d5a4e'];
 const $=s=>document.querySelector(s);
 const cl=v=>String(v).replace(/[\s€%\u00a0]/g,'').replace(',','.');
