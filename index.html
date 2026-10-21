@@ -19,7 +19,7 @@ header{display:flex;align-items:center;gap:12px;padding:18px clamp(16px,4vw,48px
 .btn,nav button{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:9px;padding:9px 14px}
 .btn:hover,nav button:hover,nav button.on{border-color:var(--gold);color:var(--gold)}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-main{max-width:1100px;margin:0 auto;padding:28px clamp(16px,4vw,48px) 60px}
+main{max-width:1280px;margin:0 auto;padding:28px clamp(16px,4vw,48px) 60px}
 nav{display:flex;gap:8px;margin-bottom:26px;overflow-x:auto}nav button{white-space:nowrap}
 .hero{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:26px}
 .crit{display:grid;grid-template-columns:minmax(140px,1.2fr) 2fr auto;gap:4px 14px;align-items:center;margin:14px 0}
@@ -66,6 +66,11 @@ th{font-size:12px}td{font-size:14px}
 .per{display:flex;gap:4px;background:#0b0b0c;padding:4px;border-radius:10px}
 .per button{border:0;background:none;color:var(--mu);padding:5px 12px;border-radius:7px;font-size:12px}.per button.on{background:#2a2923;color:var(--gold)}
 @media(max-width:820px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;align-items:center;gap:10px;padding:12px;overflow-x:auto}.side .brand small{display:none}.side nav{display:flex}}
+.g2{display:grid;grid-template-columns:minmax(220px,1fr) 1.5fr;gap:24px;align-items:center}
+.rw{display:grid;grid-template-columns:minmax(110px,1.3fr) 2fr auto 54px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #1e1e21}
+.rw span:first-child{display:flex;align-items:center;gap:8px}.rw i{width:9px;height:9px;border-radius:50%;flex:none}
+.rw .t{height:6px;background:#2a2923;border-radius:3px}.rw .t b{display:block;height:100%;border-radius:3px}.rw span:last-child{text-align:right}
+@media(max-width:820px){.g2{grid-template-columns:1fr}.rw{grid-template-columns:1fr auto 54px}.rw .t{display:none}}
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="mark">A</div><div><strong>AUREN</strong><small>Wealth, redefined.</small></div></div><nav id="nav"></nav></aside><div class="content"><header><h1 id="ttl"></h1><span id="meta"></span><button class="btn" id="refresh">Actualiser</button><button class="btn" id="logout">Verrouiller</button></header>
 <main id="app"></main></div></div>
@@ -86,9 +91,11 @@ const cls=v=>{const x=p(v);return isNaN(x)?'':x>=0?'pos':'neg'};
 const D=v=>{if(!v)return null;let m=String(v).match(/^(\d{4})-(\d\d)-(\d\d)/);if(m)return new Date(+m[1],m[2]-1,+m[3]);m=String(v).match(/^(\d\d)\/(\d\d)\/(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]):null};
 const fmt=(t,v)=>t==='e'?eur(v):t==='p'?pc(v):t==='q'?(isN(v)?f(v,4):'—'):(v==null?'':v);
 const tbl=(cols,rows)=>`<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="${/^TOTAL/.test(r[cols[0][1]]||r['Nom']||'')?'tot':''}">${cols.map(c=>`<td class="${c[2]==='p'?cls(r[c[1]]):''}">${fmt(c[2],r[c[1]])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-let charts=[],cur='ov',evoC=null;
+let charts=[],cur='ov',evoC=null,gc=null;
 Chart.defaults.font.family='Inter,system-ui,sans-serif';Chart.defaults.color='#a5a398';
 const donut=(id,e)=>charts.push(new Chart($(id),{type:'doughnut',data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:PAL,borderColor:'#1a1a18',borderWidth:2}]},options:{maintainAspectRatio:false,cutout:'64%',plugins:{legend:{position:'bottom',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label} : ${eur(c.parsed,0)}`}}}}}));
+const donut2=(id,e)=>{donut(id,e);return charts[charts.length-1]};
+const lst=e=>{const t=e.reduce((a,x)=>a+x[1],0)||1;return e.map((x,i)=>`<div class="rw"><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(x[0])}</span><div class="t"><b style="width:${x[1]/t*100}%;background:${PAL[i%PAL.length]}"></b></div><span>${eur(x[1],0)}</span><span class="mu">${f(x[1]/t*100,1)} %</span></div>`).join('')};
 const agg=(rows,k)=>{const m={};rows.forEach(r=>{const key=String(r[k]||'Autre').trim();m[key]=(m[key]||0)+n(r['Val. Totale'])});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
 
 function render(d){
@@ -108,6 +115,15 @@ function render(d){
   const nEff=(eff(agg(cto,'Secteur'))+eff(agg(cto,'Zone Géo')))/2;
   const crit=[['Poids d\'Airbus',25*(cc<=sl?1:c01(1-(cc-sl)/sl)),`${f(cc,1)} % pour un seuil de ${f(sl,0)} %`],['Part des cryptos',25*(cp<=10?1:c01(1-(cp-10)/30)),`${f(cp,1)} % (idéal : 10 % ou moins)`],['Variété des secteurs et zones',25*c01((nEff-1)/5),`${f(nEff,1)} secteurs ou zones équivalents (idéal : 6)`],['Nombre de lignes',25*c01(cto.length/20),`${cto.length} lignes (idéal : 20)`]];
   const score=Math.round(crit.reduce((a,c)=>a+(c[1]||0),0));
+  const kc=(l,v,c)=>`<div class="card"><div class="mu">${l}</div><div class="v ${c||''}">${v}</div></div>`,sg=x=>x>=0?'pos':'neg',dc=(id,t)=>`<div class="card"><h2>${t}</h2><div class="ch"><canvas id="${id}"></canvas></div></div>`;
+  const ct=ctoAll.find(r=>r['Nom']==='TOTAL')||{},cv=n(ct['Val. Totale']),ci=n(ct['Investi']);
+  const ctoTop=`<div class="stats">${kc('Valeur du CTO',eur(cv,0))}${kc('Investi',eur(ci,0))}${kc('Plus-value',eur(cv-ci,0),sg(cv-ci))}${kc('Performance',pc(ct['Perf %']),cls(ct['Perf %']))}</div><div class="g3">${dc('c10','Par position')}${dc('c11','Par secteur')}${dc('c12','Par zone')}</div>`;
+  const ab=d.airbus||[],al=ab.filter(r=>/^(PEG|PERCOL)\s*-/.test(r['Synthèse']||'')&&n(r['Val.Totale'])>0),at=ab.find(r=>r['Synthèse']==='TOTAL AIRBUS')||{},av=n(at['Val.Totale']),ai=n(at['Investi']);
+  const aPeg=al.filter(r=>/^PEG/.test(r['Synthèse'])).reduce((a,r)=>a+n(r['Val.Totale']),0),aPer=al.filter(r=>/^PERCOL/.test(r['Synthèse'])).reduce((a,r)=>a+n(r['Val.Totale']),0);
+  const airTop=`<div class="stats">${kc('Valeur Airbus',eur(av,0))}${kc('Investi',eur(ai,0))}${kc('Plus-value',eur(av-ai,0),sg(av-ai))}${kc('Performance',pc(at['Perf %']),cls(at['Perf %']))}</div><div class="g3">${dc('c13','Par ligne')}${dc('c14','PEG et PERCOL')}${dc('c15','Investi et plus-value')}</div>`;
+  const cq=cry.filter(r=>r['TICKER']&&n(r['Val. Totale'])>0),yt=cry.find(r=>r['Nom']==='TOTAL')||{},yv=n(yt['Val. Totale']),yi=n(yt['Investi']);
+  const cryTop=`<div class="stats">${kc('Valeur des cryptos',eur(yv,0))}${kc('Investi',eur(yi,0))}${kc('Plus-value',eur(yv-yi,0),sg(yv-yi))}${kc('Performance',pc(yt['Perf %']),cls(yt['Perf %']))}</div><div class="g3">${dc('c16','Par crypto')}${dc('c17','Investi et plus-value')}</div>`;
+  const repCard=`<div class="card"><div class="evh"><h2>Répartition</h2><div class="per" id="gp">${['Enveloppe','Secteur','Zone','Position'].map((x,i)=>`<button data-g="${x}" class="${i?'':'on'}">${x}</button>`).join('')}</div></div><div class="g2"><div class="ch"><canvas id="c8"></canvas></div><div id="gl"></div></div><p class="mu">Secteur, zone et position portent sur le CTO.</p></div>`;
   const evoCard=`<div class="card"><div class="evh"><h2>Évolution du patrimoine</h2><div class="per">${[['1M',1],['3M',3],['1A',12],['Tout',0]].map(x=>`<button data-r="${x[1]}" class="${x[1]===0?'on':''}">${x[0]}</button>`).join('')}</div></div><div class="ch"><canvas id="c4"></canvas></div>${hist.length<3?'<p class="mu">La courbe se construira au fil de tes snapshots mensuels (onglet Historique).</p>':''}</div>`;
   const ring=`<svg viewBox="0 0 120 120" width="136" height="136" role="img" aria-label="Score ${score} sur 100"><circle cx="60" cy="60" r="54" fill="none" stroke="#2a2923" stroke-width="9"/><circle cx="60" cy="60" r="54" fill="none" stroke="#d7c18a" stroke-width="9" stroke-linecap="round" stroke-dasharray="${339.3*score/100} 339.3" transform="rotate(-90 60 60)"/><text x="60" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-size="36" fill="#f4f1e8">${score}</text><text x="60" y="86" text-anchor="middle" font-size="11" fill="#a5a398">sur 100</text></svg>`;
   const scoreCard=`<div class="card"><h2>Score de diversification</h2>${crit.map(c=>`<div class="crit"><span>${c[0]}</span><div class="t"><i style="width:${(c[1]||0)*4}%"></i></div><span>${Math.round(c[1]||0)}/25</span><small>${c[2]}</small></div>`).join('')}</div>`;
@@ -133,14 +149,19 @@ function render(d){
 <div class="card"><div class="mu">TRI du CTO, annualisé</div><div class="v ${cls(k['TRI CTO annualisé'])}">${pc(k['TRI CTO annualisé'])}</div></div>
 <div class="card"><div class="mu">Dividendes de l'année</div><div class="v">${eur(k['Dividendes (année en cours)'])}</div></div>
 <div class="card"><div class="mu">Poids d'Airbus</div><div class="v ${over?'warn':''}">${pc(conc)}</div><div class="mu">Seuil ${f(sl)} %, cryptos ${pc(pcry)}</div></div></div>
-<div class="g3"><div class="card"><h2>Par enveloppe</h2><div class="ch"><canvas id="c1"></canvas></div></div><div class="card"><h2>Par secteur</h2><div class="ch"><canvas id="c2"></canvas></div></div><div class="card"><h2>Par zone</h2><div class="ch"><canvas id="c3"></canvas></div></div></div>
+${repCard}
 <div class="card"><h2>Enveloppes</h2>${tbl([['Actif','Actif'],['Investi','Investissement','e'],['Valeur','Val. Totale','e'],['Plus-value','Plus-Value (€)','e'],['Perf.','Performance (%)','p'],['Poids','Répartition','p']],d.patrimoine||[])}</div>
 <div class="card"><h2>Suivi annuel</h2>${tbl([['Année','Année'],['Investi','Sommes investies','e'],['Plus-value','Plus-value','e'],['Patrimoine','Patrimoine actuel','e'],['Perf.','Performance (%)','p']],(d.annuel||[]).filter(r=>n(r['Patrimoine actuel'])>0))}</div></section>
-<section id="s-cto" hidden><div class="card"><h2>Performance par ligne</h2><div class="ch" style="height:380px"><canvas id="c5"></canvas></div></div><div class="card"><h2>Investissements (CTO)</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['1 jour','1JOUR','p'],['1 mois','1MOIS','p'],['YTD','YTD','p'],['Perf.','Perf %','p']],ctoAll)}</div></section>
-<section id="s-air" hidden><div class="card"><h2>Airbus : PEG et PERCOL</h2>${tbl([['Ligne','Synthèse'],['Qté','Quantité','q'],['Investi','Investi','e'],['PRU réel','PRU Réel','e'],['Cours','Cours Actuel','e'],['Valeur','Val.Totale','e'],['Plus-value','Plus-Value','e'],['Perf.','Perf %','p']],d.airbus||[])}</div></section>
-<section id="s-cry" hidden><div class="card"><h2>Cryptos</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix (EUR)','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['Perf.','Perf %','p'],['Alloc.','Allocation en %','p']],cry)}</div></section>
+<section id="s-cto" hidden>${ctoTop}<div class="card"><h2>Performance par ligne</h2><div class="ch" style="height:380px"><canvas id="c5"></canvas></div></div><div class="card"><h2>Investissements (CTO)</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['1 jour','1JOUR','p'],['1 mois','1MOIS','p'],['YTD','YTD','p'],['Perf.','Perf %','p']],ctoAll)}</div></section>
+<section id="s-air" hidden>${airTop}<div class="card"><h2>Airbus : PEG et PERCOL</h2>${tbl([['Ligne','Synthèse'],['Qté','Quantité','q'],['Investi','Investi','e'],['PRU réel','PRU Réel','e'],['Cours','Cours Actuel','e'],['Valeur','Val.Totale','e'],['Plus-value','Plus-Value','e'],['Perf.','Perf %','p']],d.airbus||[])}</div></section>
+<section id="s-cry" hidden>${cryTop}<div class="card"><h2>Cryptos</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix (EUR)','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['Perf.','Perf %','p'],['Alloc.','Allocation en %','p']],cry)}</div></section>
 ${depHTML}${regHTML}<section id="s-his" hidden><div class="card">${tbl([['Date','Date'],['Investi','Investi total','e'],['Valeur','Valeur totale','e'],['Plus-value','Plus-value','e'],['Perf.','Perf %','p']],(d.historique||[]).slice(-15).reverse().map(r=>({...r,Date:D(r['Date'])?D(r['Date']).toLocaleDateString('fr-FR'):r['Date']})))}</div></section>`;
-  donut('#c1',pat.map(r=>[r['Actif'],n(r['Val. Totale'])]));donut('#c2',agg(cto,'Secteur'));donut('#c3',agg(cto,'Zone Géo'));donut('#c6',Object.entries(byCat));
+  const AL={Enveloppe:pat.map(r=>[r['Actif'],n(r['Val. Totale'])]),Secteur:agg(cto,'Secteur'),Zone:agg(cto,'Zone Géo'),Position:cto.map(r=>[r['Nom'],n(r['Val. Totale'])]).sort((a,b)=>b[1]-a[1])};
+  const grp=g=>{if(gc){gc.destroy();charts=charts.filter(c=>c!==gc)}gc=donut2('#c8',AL[g]);$('#gl').innerHTML=lst(AL[g])};
+  document.querySelectorAll('#gp button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#gp button').forEach(x=>x.classList.toggle('on',x===b));grp(b.dataset.g)});grp('Enveloppe');
+  donut('#c10',AL.Position);donut('#c11',AL.Secteur);donut('#c12',AL.Zone);
+  donut('#c13',al.map(r=>[r['Synthèse'],n(r['Val.Totale'])]));donut('#c14',[['PEG',aPeg],['PERCOL',aPer]]);donut('#c15',[['Investi',ai],['Plus-value',Math.max(av-ai,0)]]);
+  donut('#c16',cq.map(r=>[r['Nom'],n(r['Val. Totale'])]));donut('#c17',[['Investi',yi],['Plus-value',Math.max(yv-yi,0)]]);donut('#c6',Object.entries(byCat));
   const pl=cto.filter(r=>isN(r['Perf %'])).sort((a,b)=>p(b['Perf %'])-p(a['Perf %']));
   charts.push(new Chart($('#c5'),{type:'bar',data:{labels:pl.map(r=>r['Nom']),datasets:[{data:pl.map(r=>p(r['Perf %'])),backgroundColor:pl.map(r=>p(r['Perf %'])>=0?'#91c7a0':'#e18d82'),borderRadius:4}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+f(c.parsed.x)+' %'}}},scales:{x:{grid:{color:'#30302b'},ticks:{callback:v=>v+' %'}},y:{grid:{display:false}}}}}));
   const mo=[...Array(6)].map((_,i)=>{const x=new Date(now.getFullYear(),now.getMonth()-5+i,1);return[x.toLocaleDateString('fr-FR',{month:'short'}),dep.filter(r=>ym(r.d)===ym(x)).reduce((a,r)=>a+r.m,0)]});
