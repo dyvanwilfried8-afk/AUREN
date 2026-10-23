@@ -102,7 +102,7 @@ Chart.defaults.font.family='Inter,system-ui,sans-serif';Chart.defaults.color='#a
 const donut=(id,e)=>charts.push(new Chart($(id),{type:'doughnut',data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:PAL,borderColor:'#1a1a18',borderWidth:2}]},options:{maintainAspectRatio:false,cutout:'64%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label} : ${eur(c.parsed,0)}`}}}}}));
 const donut2=(id,e)=>{donut(id,e);return charts[charts.length-1]};
 const lst=e=>{const t=e.reduce((a,x)=>a+x[1],0)||1;return e.map((x,i)=>`<div class="rw"><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(x[0])}</span><div class="t"><b style="width:${x[1]/t*100}%;background:${PAL[i%PAL.length]}"></b></div><span>${eur(x[1],0)}</span><span class="mu">${f(x[1]/t*100,1)} %</span></div>`).join('')};
-const dn=(id,e)=>{donut('#'+id,e);$('#'+id+'l').innerHTML=lst(e)};
+const dn=(id,e)=>{const c=donut2('#'+id,e);c.options.plugins.legend={display:true,position:'right',labels:{boxWidth:10,font:{size:12}}};c.update()};
 const agg=(rows,k)=>{const m={};rows.forEach(r=>{const key=String(r[k]||'Autre').trim();m[key]=(m[key]||0)+n(r['Val. Totale'])});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
 
 function render(d){
@@ -122,7 +122,7 @@ function render(d){
   const nEff=(eff(agg(cto,'Secteur'))+eff(agg(cto,'Zone Géo')))/2;
   const crit=[['Poids d\'Airbus',25*(cc<=sl?1:c01(1-(cc-sl)/sl)),`${f(cc,1)} % pour un seuil de ${f(sl,0)} %`],['Part des cryptos',25*(cp<=10?1:c01(1-(cp-10)/30)),`${f(cp,1)} % (idéal : 10 % ou moins)`],['Variété des secteurs et zones',25*c01((nEff-1)/5),`${f(nEff,1)} secteurs ou zones équivalents (idéal : 6)`],['Nombre de lignes',25*c01(cto.length/20),`${cto.length} lignes (idéal : 20)`]];
   const score=Math.round(crit.reduce((a,c)=>a+(c[1]||0),0));
-  const kc=(l,v,c)=>`<div class="card"><div class="mu">${l}</div><div class="v ${c||''}">${v}</div></div>`,sg=x=>x>=0?'pos':'neg',dc=(id,t)=>`<div class="card"><h2>${t}</h2><div class="g2 dn"><div class="ch"><canvas id="${id}"></canvas></div><div class="lst" id="${id}l"></div></div></div>`;
+  const kc=(l,v,c)=>`<div class="card"><div class="mu">${l}</div><div class="v ${c||''}">${v}</div></div>`,sg=x=>x>=0?'pos':'neg',dc=(id,t)=>`<div class="card"><h2>${t}</h2><div class="ch"><canvas id="${id}"></canvas></div></div>`;
   const ct=ctoAll.find(r=>r['Nom']==='TOTAL')||{},cv=n(ct['Val. Totale']),ci=n(ct['Investi']);
   const ctoTop=`<div class="stats">${kc('Valeur du CTO',eur(cv,0))}${kc('Investi',eur(ci,0))}${kc('Plus-value',eur(cv-ci,0),sg(cv-ci))}${kc('Performance',pc(ct['Perf %']),cls(ct['Perf %']))}</div><div class="g3">${dc('c10','Par position')}${dc('c11','Par secteur')}${dc('c12','Par zone')}</div>`;
   const ab=d.airbus||[],al=ab.filter(r=>/^(PEG|PERCOL)\s*-/.test(r['Synthèse']||'')&&n(r['Val.Totale'])>0),at=ab.find(r=>r['Synthèse']==='TOTAL AIRBUS')||{},av=n(at['Val.Totale']),ai=n(at['Investi']);
