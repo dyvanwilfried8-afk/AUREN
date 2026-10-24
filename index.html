@@ -97,12 +97,20 @@ const cls=v=>{const x=p(v);return isNaN(x)?'':x>=0?'pos':'neg'};
 const D=v=>{if(!v)return null;let m=String(v).match(/^(\d{4})-(\d\d)-(\d\d)/);if(m)return new Date(+m[1],m[2]-1,+m[3]);m=String(v).match(/^(\d\d)\/(\d\d)\/(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]):null};
 const fmt=(t,v)=>t==='e'?eur(v):t==='p'?pc(v):t==='q'?(isN(v)?f(v,4):'—'):(v==null?'':v);
 const tbl=(cols,rows)=>`<div class="tw"><table><thead><tr>${cols.map(c=>`<th>${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="${/^TOTAL/.test(r[cols[0][1]]||r['Nom']||'')?'tot':''}">${cols.map(c=>`<td class="${c[2]==='p'?cls(r[c[1]]):''}">${fmt(c[2],r[c[1]])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-let charts=[],cur='ov',evoC=null,gc=null;
+let charts=[],cur='ov',evoC=null,gc=null,strC=null;
 Chart.defaults.font.family='Inter,system-ui,sans-serif';Chart.defaults.color='#a5a398';
 const donut=(id,e)=>charts.push(new Chart($(id),{type:'doughnut',data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:PAL,borderColor:'#1a1a18',borderWidth:2}]},options:{maintainAspectRatio:false,cutout:'64%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label} : ${eur(c.parsed,0)}`}}}}}));
 const donut2=(id,e)=>{donut(id,e);return charts[charts.length-1]};
 const lst=e=>{const t=e.reduce((a,x)=>a+x[1],0)||1;return e.map((x,i)=>`<div class="rw"><span><i style="background:${PAL[i%PAL.length]}"></i>${esc(x[0])}</span><div class="t"><b style="width:${x[1]/t*100}%;background:${PAL[i%PAL.length]}"></b></div><span>${eur(x[1],0)}</span><span class="mu">${f(x[1]/t*100,1)} %</span></div>`).join('')};
 const dn=(id,e)=>{const c=donut2('#'+id,e);c.options.plugins.legend={display:true,position:'right',labels:{boxWidth:10,font:{size:12}}};c.update()};
+const CL=[['act','Actions et ETF','#d7c18a'],['or','Or','#b89b5e'],['peg','PEG et fonds diversifiés','#91c7a0'],['cry','Crypto','#e18d82'],['cash','Liquidités','#8a8574']];
+// Chocs approximatifs inspirés de l'histoire : [baisse en %, année de retour au niveau d'avant]. Modifiables.
+const SC={
+"Correction 2022":{tt:.8,t:"2022 : remontée brutale des taux. Les actions perdent environ 25 % en moins d'un an, le bitcoin environ 75 %, retour au niveau d'avant en 2 à 2,5 ans.",a:{act:[-25,2],or:[-8,1],peg:[-15,2.5],cry:[-75,2.5],cash:[0,0]}},
+"Covid 2020":{tt:.1,t:"Mars 2020 : chute très rapide (environ -34 % sur les actions en un mois), puis rebond en quelques mois.",a:{act:[-34,.6],or:[-10,.3],peg:[-20,.7],cry:[-50,.5],cash:[0,0]}},
+"Bulle tech 2000":{tt:2.6,t:"Éclatement de la bulle internet : environ -45 % sur les actions en 2,6 ans et près de 7 ans pour revenir au niveau d'avant. Les cryptos n'existaient pas : leur choc est une hypothèse.",a:{act:[-45,7],or:[0,0],peg:[-20,6],cry:[-75,5],cash:[0,0]}},
+"Krach 2008":{tt:1.4,t:"Crise financière : environ -50 % sur les actions en 17 mois et environ 5 ans pour revenir au niveau d'avant. Les cryptos n'existaient pas : leur choc est une hypothèse.",a:{act:[-50,5],or:[-10,1.8],peg:[-25,5],cry:[-75,4],cash:[0,0]}}};
+const pth=(a,t,tt)=>{const dd=a[0],tb=a[1];if(!dd||t<=0)return 1;const lo=1+dd/100;if(t<tt)return 1+(lo-1)*t/tt;if(t<tb)return lo+(1-lo)*(t-tt)/(tb-tt);return 1};
 const agg=(rows,k)=>{const m={};rows.forEach(r=>{const key=String(r[k]||'Autre').trim();m[key]=(m[key]||0)+n(r['Val. Totale'])});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
 
 function render(d){
@@ -131,6 +139,10 @@ function render(d){
   const cq=cry.filter(r=>r['TICKER']&&n(r['Val. Totale'])>0),yt=cry.find(r=>r['Nom']==='TOTAL')||{},yv=n(yt['Val. Totale']),yi=n(yt['Investi']);
   const cryTop=`<div class="stats">${kc('Valeur des cryptos',eur(yv,0))}${kc('Investi',eur(yi,0))}${kc('Plus-value',eur(yv-yi,0),sg(yv-yi))}${kc('Performance',pc(yt['Perf %']),cls(yt['Perf %']))}</div><div class="g3">${dc('c16','Par crypto')}${dc('c17','Investi et plus-value')}</div>`;
   const repCard=`<div class="card"><div class="evh"><h2>Répartition</h2><div class="per" id="gp">${['Enveloppe','Secteur','Zone','Position'].map((x,i)=>`<button data-g="${x}" class="${i?'':'on'}">${x}</button>`).join('')}</div></div><div class="g2"><div class="ch"><canvas id="c8"></canvas></div><div id="gl"></div></div><p class="mu">Secteur, zone et position portent sur le CTO.</p></div>`;
+  const strHTML=`<section id="s-str" hidden><div class="card"><div class="evh"><h2>Que se passerait-il en cas de krach ?</h2><div class="per" id="scp">${Object.keys(SC).map((x,i)=>`<button data-s="${x}" class="${i?'':'on'}">${x}</button>`).join('')}</div></div><p class="mu" id="sdesc"></p></div>
+<div class="stats" id="sk"></div>
+<div class="card"><h2>Évolution sur 10 ans, en % du capital investi</h2><div class="ch" style="height:380px"><canvas id="c20"></canvas></div><p class="mu">La ligne grisée à 0 % représente ton capital investi. Simulation simplifiée : sans nouveaux versements, sans dividendes ni croissance après la reprise. Les chocs sont des ordres de grandeur historiques, pas des prévisions.</p></div>
+<div class="card"><h2>Impact par classe d'actifs</h2><div id="stb"></div></div></section>`;
   const evoCard=`<div class="card w8"><div class="evh"><h2>Évolution du patrimoine</h2><div class="per" id="evp">${[['1M',1],['3M',3],['1A',12],['Tout',0]].map(x=>`<button data-r="${x[1]}" class="${x[1]===0?'on':''}">${x[0]}</button>`).join('')}</div></div><div class="ch"><canvas id="c4"></canvas></div>${hist.length<3?'<p class="mu">La courbe se construira au fil de tes snapshots mensuels (onglet Historique).</p>':''}</div>`;
   const ring=`<svg viewBox="0 0 120 120" width="136" height="136" role="img" aria-label="Score ${score} sur 100"><circle cx="60" cy="60" r="54" fill="none" stroke="#2a2923" stroke-width="9"/><circle cx="60" cy="60" r="54" fill="none" stroke="#d7c18a" stroke-width="9" stroke-linecap="round" stroke-dasharray="${339.3*score/100} 339.3" transform="rotate(-90 60 60)"/><text x="60" y="66" text-anchor="middle" font-family="Inter,sans-serif" font-size="36" fill="#f4f1e8">${score}</text><text x="60" y="86" text-anchor="middle" font-size="11" fill="#a5a398">sur 100</text></svg>`;
   const scoreCard=`<div class="card w4"><h2>Score de diversification</h2>${crit.map(c=>`<div class="crit"><span>${c[0]}</span><div class="t"><i style="width:${(c[1]||0)*4}%"></i></div><span>${Math.round(c[1]||0)}/25</span><small>${c[2]}</small></div>`).join('')}</div>`;
@@ -144,9 +156,9 @@ function render(d){
 <div class="g3">${dc('c6','Ce mois-ci, par catégorie')}<div class="card"><h2>Les 6 derniers mois</h2><div class="ch"><canvas id="c7"></canvas></div></div></div>
 <div class="card"><h2>Dernières dépenses</h2><div class="tw"><table><thead><tr><th>Date</th><th>Catégorie</th><th>Libellé</th><th>Montant</th><th></th></tr></thead><tbody>${dep.slice(0,40).map(r=>`<tr><td>${r.d.toLocaleDateString('fr-FR')}</td><td>${esc(r.c)}</td><td>${esc(r.l)}</td><td>${eur(r.m)}</td><td><button class="btn x" data-id="${esc(r.id)}">Supprimer</button></td></tr>`).join('')||'<tr><td colspan="5" class="mu">Aucune dépense pour l\'instant.</td></tr>'}</tbody></table></div></div></section>`;
   const regHTML=`<section id="s-reg" hidden><div class="card"><h2>Réglages</h2><div class="frm col"><label>Objectif de patrimoine (€)<input id="r1" type="number" value="${G}"></label><label>Seuil d'alerte pour Airbus (%)<input id="r2" type="number" step="0.5" value="${isNaN(sl)?25:sl}"></label><label>Budget mensuel de dépenses (€)<input id="r3" type="number" value="${bud||''}"></label><button class="btn gold" id="rsave">Enregistrer</button><p class="mu" id="rmsg"></p></div></div><p class="mu">Ces valeurs sont enregistrées dans ton Google Sheet (onglet AUREN Réglages).</p></section>`;
-  const tabs=[['ov','Vue d\'ensemble'],['cto','Investissements'],['air','Airbus'],['cry','Crypto'],['his','Historique'],['dep','Dépenses'],['reg','Réglages']];
+  const tabs=[['ov','Vue d\'ensemble'],['cto','Investissements'],['air','Airbus'],['cry','Crypto'],['his','Historique'],['str','Stress test'],['dep','Dépenses'],['reg','Réglages']];
   $('#meta').textContent='Mis à jour '+new Date(d.generatedAt).toLocaleString('fr-FR');
-  const IC={ov:'<path d="M4 13h6V4H4zM14 20h6V11h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',cto:'<path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/>',air:'<path d="M3 13l18-9-6 17-3-7z"/>',cry:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h4a1.5 1.5 0 010 3h-4"/>',his:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',dep:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/>',reg:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'};
+  const IC={ov:'<path d="M4 13h6V4H4zM14 20h6V11h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',cto:'<path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/>',air:'<path d="M3 13l18-9-6 17-3-7z"/>',cry:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h4a1.5 1.5 0 010 3h-4"/>',his:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',dep:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/>',reg:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',str:'<path d="M3 7l5 6 4-4 4 8 5-10"/>'};
   $('#nav').innerHTML=tabs.map(t=>`<button data-t="${t[0]}"><svg viewBox="0 0 24 24">${IC[t[0]]}</svg>${t[1]}</button>`).join('');
   $('#app').innerHTML=`
 <section id="s-ov"><div class="hero"><div><div class="mu">Votre patrimoine</div><div class="big">${eur(k['Patrimoine total'])}</div>
@@ -162,13 +174,36 @@ ${repCard}
 <section id="s-cto" hidden>${ctoTop}<div class="card"><h2>Performance par ligne</h2><div class="ch" style="height:380px"><canvas id="c5"></canvas></div></div><div class="card"><h2>Investissements (CTO)</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['1 jour','1JOUR','p'],['1 mois','1MOIS','p'],['YTD','YTD','p'],['Perf.','Perf %','p']],ctoAll)}</div></section>
 <section id="s-air" hidden>${airTop}<div class="card"><h2>Airbus : PEG et PERCOL</h2>${tbl([['Ligne','Synthèse'],['Qté','Quantité','q'],['Investi','Investi','e'],['PRU réel','PRU Réel','e'],['Cours','Cours Actuel','e'],['Valeur','Val.Totale','e'],['Plus-value','Plus-Value','e'],['Perf.','Perf %','p']],ab.filter(r=>!/^Contr/.test(r['Synthèse']||'')))}</div></section>
 <section id="s-cry" hidden>${cryTop}<div class="card"><h2>Cryptos</h2>${tbl([['Nom','Nom'],['Qté','Quantité','q'],['PRU','PRU','e'],['Prix','Prix (EUR)','e'],['Investi','Investi','e'],['Valeur','Val. Totale','e'],['Perf.','Perf %','p'],['Alloc.','Allocation en %','p']],cry)}</div></section>
-${depHTML}${regHTML}<section id="s-his" hidden><div class="card">${tbl([['Date','Date'],['Investi','Investi total','e'],['Valeur','Valeur totale','e'],['Plus-value','Plus-value','e'],['Perf.','Perf %','p']],(d.historique||[]).slice(-15).reverse().map(r=>({...r,Date:D(r['Date'])?D(r['Date']).toLocaleDateString('fr-FR'):r['Date']})))}</div></section>`;
+${strHTML}${depHTML}${regHTML}<section id="s-his" hidden><div class="card">${tbl([['Date','Date'],['Investi','Investi total','e'],['Valeur','Valeur totale','e'],['Plus-value','Plus-value','e'],['Perf.','Perf %','p']],(d.historique||[]).slice(-15).reverse().map(r=>({...r,Date:D(r['Date'])?D(r['Date']).toLocaleDateString('fr-FR'):r['Date']})))}</div></section>`;
   const AL={Enveloppe:pat.map(r=>[r['Actif'],n(r['Val. Totale'])]),Secteur:agg(cto,'Secteur'),Zone:agg(cto,'Zone Géo'),Position:cto.map(r=>[r['Nom'],n(r['Val. Totale'])]).sort((a,b)=>b[1]-a[1])};
   const grp=g=>{if(gc){gc.destroy();charts=charts.filter(c=>c!==gc)}gc=donut2('#c8',AL[g]);$('#gl').innerHTML=lst(AL[g])};
   document.querySelectorAll('#gp button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#gp button').forEach(x=>x.classList.toggle('on',x===b));grp(b.dataset.g)});grp('Enveloppe');
   dn('c10',AL.Position);dn('c11',AL.Secteur);dn('c12',AL.Zone);
   dn('c13',al.map(r=>[r['Synthèse'],n(r['Val.Totale'])]));dn('c14',[['PEG',aPeg],['PERCOL',aPer]]);dn('c15',[['Investi',ai],['Plus-value',Math.max(av-ai,0)]]);
-  dn('c16',cq.map(r=>[r['Nom'],n(r['Val. Totale'])]));dn('c17',[['Investi',yi],['Plus-value',Math.max(yv-yi,0)]]);dn('c6',Object.entries(byCat));
+  dn('c16',cq.map(r=>[r['Nom'],n(r['Val. Totale'])]));dn('c17',[['Investi',yi],['Plus-value',Math.max(yv-yi,0)]]);
+  const gold=r=>/mati/i.test(r['Secteur']||''),cpo=cto.filter(r=>!/^airbus/i.test(r['Nom']||'')),sv=(rows,k)=>rows.reduce((a,r)=>a+n(r[k]),0);
+  const aR=nm=>ab.find(r=>new RegExp('^'+nm,'i').test(String(r['Synthèse']||'').replace(/\s+/g,' ').trim()))||{},av2=(nm,k)=>n(aR(nm)[k]);
+  const csh=(d.patrimoine||[]).find(r=>/cash/i.test(r['Actif']||''))||{},cash=n(csh['Val. Totale']);
+  const K={act:{v:sv(cpo.filter(r=>!gold(r)),'Val. Totale')+av2('PEG - ESOP','Val.Totale')+av2('PERCOL - Actions','Val.Totale'),i:sv(cpo.filter(r=>!gold(r)),'Investi')+av2('PEG - ESOP','Investi')+av2('PERCOL - Actions','Investi')},
+    or:{v:sv(cpo.filter(gold),'Val. Totale'),i:sv(cpo.filter(gold),'Investi')},
+    peg:{v:av2('PEG - Int','Val.Totale')+av2('PERCOL - Divers','Val.Totale'),i:av2('PEG - Int','Investi')+av2('PERCOL - Divers','Investi')},
+    cry:{v:sv(cq,'Val. Totale'),i:sv(cq,'Investi')},cash:{v:cash,i:cash}};
+  const sim=name=>{
+    const S=SC[name],ks=CL.filter(c=>K[c[0]].v>0),T0=ks.reduce((a,c)=>a+K[c[0]].v,0),I0=ks.reduce((a,c)=>a+K[c[0]].i,0);
+    const tot=t=>ks.reduce((a,c)=>a+K[c[0]].v*pth(S.a[c[0]],t,S.tt),0),lo=tot(S.tt);
+    let below=tot(0)<I0,back=null,rec=null;
+    for(let i=0;i<=400;i++){const t=i/40,x=tot(t);if(rec==null&&t>=S.tt&&x>=T0*.9995)rec=t;if(x<I0)below=true;else if(below&&back==null)back=t}
+    $('#sdesc').textContent=S.t;
+    $('#sk').innerHTML=[["Plus-value aujourd'hui",eur(T0-I0,0),sg(T0-I0),''],['Valeur au creux du krach',eur(lo,0),'',`${eur(lo-T0,0)} (${f((lo/T0-1)*100,1)} %) par rapport à aujourd'hui`],['Plus-value au creux',eur(lo-I0,0),sg(lo-I0),''],['Sous le capital investi',below?(back==null?'plus de 10 ans':f(back,1)+' ans'):'Jamais',below?'neg':'pos',below?'avant de repasser en gain':'Le creux reste au-dessus du capital investi']].map(x=>`<div class="card"><div class="mu">${x[0]}</div><div class="v ${x[2]}">${x[1]}</div><div class="mu">${x[3]}</div></div>`).join('');
+    const rows=ks.map(c=>{const a=S.a[c[0]],v=K[c[0]].v;return{c:c[1],v,dd:a[0]/100,lo:v*(1+a[0]/100),pe:v*a[0]/100,rt:a[0]?f(a[1],1)+' ans':'—'}});
+    rows.push({c:'TOTAL',v:T0,dd:lo/T0-1,lo,pe:lo-T0,rt:rec==null?'plus de 10 ans':f(rec,1)+' ans'});
+    $('#stb').innerHTML=tbl([['Classe','c'],['Valeur actuelle','v','e'],['Choc','dd','p'],['Au creux','lo','e'],['Perte','pe','e'],['Retour au niveau d\'avant','rt']],rows);
+    if(strC)strC.destroy();
+    const pts=[...Array(81)].map((_,i)=>i/8);
+    const ds=ks.filter(c=>c[0]!=='cash'&&K[c[0]].i>0).map(c=>({label:c[1],data:pts.map(t=>({x:t,y:(K[c[0]].v*pth(S.a[c[0]],t,S.tt)/K[c[0]].i-1)*100})),borderColor:c[2],borderWidth:1.5,pointRadius:0}));
+    ds.push({label:'Total',data:pts.map(t=>({x:t,y:(tot(t)/I0-1)*100})),borderColor:'#f4f1e8',borderWidth:3,pointRadius:0});
+    strC=new Chart($('#c20'),{type:'line',data:{datasets:ds},options:{maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false,axis:'x'},scales:{x:{type:'linear',min:0,max:10,grid:{display:false},ticks:{callback:v=>v+(v>1?' ans':' an')}},y:{grid:{color:c=>c.tick.value===0?'#8a8574':'#232326'},ticks:{callback:v=>v+' %'}}},plugins:{legend:{labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+' : '+f(c.parsed.y,1)+' %'}}}}})};
+  document.querySelectorAll('#scp button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#scp button').forEach(x=>x.classList.toggle('on',x===b));sim(b.dataset.s)});sim(Object.keys(SC)[0]);dn('c6',Object.entries(byCat));
   const pl=cto.filter(r=>isN(r['Perf %'])).sort((a,b)=>p(b['Perf %'])-p(a['Perf %']));
   charts.push(new Chart($('#c5'),{type:'bar',data:{labels:pl.map(r=>r['Nom']),datasets:[{data:pl.map(r=>p(r['Perf %'])),backgroundColor:pl.map(r=>p(r['Perf %'])>=0?'#91c7a0':'#e18d82'),borderRadius:4}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+f(c.parsed.x)+' %'}}},scales:{x:{grid:{color:'#30302b'},ticks:{callback:v=>v+' %'}},y:{grid:{display:false}}}}}));
   const mo=[...Array(6)].map((_,i)=>{const x=new Date(now.getFullYear(),now.getMonth()-5+i,1);return[x.toLocaleDateString('fr-FR',{month:'short'}),dep.filter(r=>ym(r.d)===ym(x)).reduce((a,r)=>a+r.m,0)]});
