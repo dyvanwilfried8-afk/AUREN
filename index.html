@@ -85,7 +85,7 @@ header{padding:14px 16px 0;gap:10px}#ttl{font-size:21px}#refresh,#logout{display
 #meta{order:3;width:100%;font-size:11px}main{padding-bottom:116px}
 .side nav{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;display:flex;justify-content:space-around;gap:2px;padding:8px 6px;background:rgba(24,24,26,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid #2a2a2e;border-radius:26px}
 .side nav button{flex:1;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;font-size:10.5px;border-radius:18px}
-.side nav button svg{width:22px;height:22px}.side nav button.x{display:none}.side nav button.more{display:flex}
+.side nav button svg{width:22px;height:22px}.side nav button.ex{display:none}.side nav button.more{display:flex}
 #more.open{display:grid}
 #more{position:fixed;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:60;min-width:220px;padding:8px;gap:2px;background:#18181a;border:1px solid #2a2a2e;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
 #more button{display:flex;align-items:center;gap:12px;background:none;border:0;color:var(--tx);padding:12px;border-radius:10px;text-align:left;font-size:15px}
@@ -178,7 +178,7 @@ function render(d){
   const tabs=[['ov','Vue d\'ensemble'],['cto','Investissements'],['air','Airbus'],['cry','Crypto'],['his','Historique'],['str','Stress test'],['dep','Dépenses'],['reg','Réglages']];
   $('#meta').textContent='Mis à jour '+new Date(d.generatedAt).toLocaleString('fr-FR');
   const IC={ov:'<path d="M4 13h6V4H4zM14 20h6V11h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',cto:'<path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/>',air:'<path d="M3 13l18-9-6 17-3-7z"/>',cry:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h4a1.5 1.5 0 010 3h-4"/>',his:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',dep:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/>',reg:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',str:'<path d="M3 7l5 6 4-4 4 8 5-10"/>'};
-  $('#nav').innerHTML=tabs.map(t=>`<button data-t="${t[0]}" class="${MAIN.includes(t[0])?'':'x'}"><svg viewBox="0 0 24 24">${IC[t[0]]}</svg><span>${t[1]}</span></button>`).join('')+'<button id="mb" class="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span></button>';
+  $('#nav').innerHTML=tabs.map(t=>`<button data-t="${t[0]}" class="${MAIN.includes(t[0])?'':'ex'}"><svg viewBox="0 0 24 24">${IC[t[0]]}</svg><span>${t[1]}</span></button>`).join('')+'<button id="mb" class="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span></button>';
   $('#more').innerHTML=tabs.filter(t=>!MAIN.includes(t[0])).map(t=>`<button data-t="${t[0]}"><svg viewBox="0 0 24 24">${IC[t[0]]}</svg>${t[1]}</button>`).join('')+'<hr><button id="mref">Actualiser</button><button id="mlock">Verrouiller</button>';
   $('#app').innerHTML=`
 <section id="s-ov"><div class="hero"><div><div class="mu">Votre patrimoine</div><div class="big">${eur(k['Patrimoine total'])}</div>
@@ -243,7 +243,7 @@ function bind(){
   $('#dadd').onclick=async()=>{const m=parseFloat($('#dm').value),dt=$('#dd').value;if(!(m>0)||!dt)return say('#dmsg','Renseigne une date et un montant.');
     say('#dmsg','Enregistrement…');
     try{await api({action:'addExpense',date:dt,cat:$('#dc').value.trim()||'Divers',label:$('#dl').value.trim(),amount:m});await load()}catch(e){say('#dmsg','Échec : redéploie le script Apps Script (voir README).')}};
-  document.querySelectorAll('.x').forEach(b=>b.onclick=async()=>{if(!confirm('Supprimer cette dépense ?'))return;try{await api({action:'delExpense',id:b.dataset.id});await load()}catch(e){alert('Échec de la suppression.')}});
+  document.querySelectorAll('#s-dep .x').forEach(b=>b.onclick=async()=>{if(!confirm('Supprimer cette dépense ?'))return;try{await api({action:'delExpense',id:b.dataset.id});await load()}catch(e){alert('Échec de la suppression.')}});
   $('#rsave').onclick=async()=>{say('#rmsg','Enregistrement…');try{await api({action:'settings',values:{objectif:$('#r1').value,seuil_airbus:$('#r2').value,budget_mensuel:$('#r3').value}});await load()}catch(e){say('#rmsg','Échec de l\'enregistrement.')}};
 }
 function login(msg){$('#login').hidden=false;$('#err').textContent=msg||''}
